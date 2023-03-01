@@ -1,6 +1,6 @@
 <template>
   <!-- 注册页面的整体盒子 -->
-  <div class="reg-container">
+  <div v-loading="loading" class="reg-container">
     <!-- 注册的盒子 -->
     <div class="reg-box">
       <!-- 标题的盒子 -->
@@ -59,13 +59,26 @@ export default {
           { rpattern: /^\S{6,15}$/, message: '请输入6-15位的非空字符', trigger: 'blur' },
           { validator: checkPwd, trigger: 'blur' }
         ]
-      }
+      },
+      loading: false
     }
   },
   methods: {
     regBtn () {
+      // 兜底校验
       this.$refs.regRorm.validate((valid) => {
         if (!valid) return
+        // 加载动画
+        this.$axios.interceptors.request.use((config) => {
+          // 展示 Loading 效果
+          this.loading = true
+          return config
+        })
+        this.$axios.interceptors.response.use((response) => {
+          // 隐藏 Loading 效果
+          this.loading = false
+          return response
+        })
         this.$axios({
           method: 'post',
           url: '/api/reg',
