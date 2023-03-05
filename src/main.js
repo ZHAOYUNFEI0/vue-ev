@@ -12,6 +12,14 @@ import './assets/global.less'
 // 引入 axios
 import axios from 'axios'
 
+// 引入quill
+import VueQuillEditor from 'vue-quill-editor'
+// 引入quill样式
+import 'quill/dist/quill.core.css'
+import 'quill/dist/quill.snow.css'
+import 'quill/dist/quill.bubble.css'
+Vue.use(VueQuillEditor)
+
 // 使用 element-ui 框架
 Vue.use(ElementUI)
 

@@ -25,17 +25,98 @@
             </el-form-item>
           </el-form>
           <!-- 发表文章的按钮 -->
-          <el-button type="primary" size="small" class="btn-pub">发表文章</el-button>
+          <el-button type="primary" @click="dialogVisible = true" size="small" class="btn-pub">发表文章</el-button>
         </div>
 
         <!-- 文章表格区域 -->
+          <el-table
+            border
+            stripe
+            :data="artList"
+            style="width: 100%">
+            <el-table-column
+              prop="title"
+              label="文章标题"
+              width="180">
+            </el-table-column>
+            <el-table-column
+              prop="cate_name"
+              label="文章分类"
+              width="180">
+            </el-table-column>
+            <el-table-column
+              label="发表时间">
+              <template v-slot="scop">
+                {{fromatData(scop.row.pub_date)  }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="操作">
+              <el-button type="danger" size="mini">删除</el-button>
+            </el-table-column>
+          </el-table>
 
         <!-- 分页区域 -->
+        <div class="block">
+          <el-pagination
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page= q.pagenum
+            :page-sizes="[1,2, 3, 4]"
+            :page-size=q.pagesize
+            layout="total, sizes, prev, pager, next, jumper"
+            :total=total>
+          </el-pagination>
+        </div>
       </el-card>
+
+      <el-dialog
+        fullscreen
+        title="发表文章"
+        :visible.sync="dialogVisible"
+        width="30%"
+        :before-close="handleClose">
+        <el-form
+          :model="ruleForm"
+          :rules="rules"
+          ref="ruleForm"
+          label-width="100px"
+          class="demo-ruleForm">
+          <el-form-item label="活动名称" prop="title">
+            <el-input placeholder="请输入活动名称" v-model="ruleForm.name"></el-input>
+          </el-form-item>
+          <el-form-item label="活动区域" prop="cate_id">
+            <el-select v-model="ruleForm.region" placeholder="请选择活动区域">
+              <el-option v-for="item in addlist" :key="item.id" :label="item.cate_name" :value="item.id"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item prop="content" label="文章内容">
+            <quill-editor v-model="ruleForm.content"></quill-editor>
+          </el-form-item>
+          <el-form-item label="文章封面">
+            <!-- 用来显示封面的图片 -->
+            <img v-if="cover" :src="cover" alt="" class="cover-img" ref="imgRef" />
+            <img v-else src="../../../assets/images/cover.jpg" alt="" class="cover-img" ref="imgRef" />
+            <br />
+
+            <!-- 文件选择框，默认隐藏 -->
+            <input @change="coverChange" type="file" style="display: none" accept="image/*" ref="inp">
+            <!-- 选择封面的按钮 -->
+            <el-button @click="$refs.inp.click()" type="text">+ 选择封面</el-button>
+
+          </el-form-item>
+          <el-form-item>
+              <el-button @click="fabu('已发布')" type="primary">发布</el-button>
+              <el-button @click="fabu('草稿')" type="info">存为草稿</el-button>
+          </el-form-item>
+        </el-form>
+
+      </el-dialog>
     </div>
   </template>
 
 <script>
+import dayjs from 'dayjs'
 export default {
   name: 'ArtList',
   data () {
@@ -46,8 +127,124 @@ export default {
         pagesize: 2,
         cate_id: '',
         state: ''
-      }
+      },
+      total: 0,
+      dialogVisible: false,
+      ruleForm: {
+        name: '',
+        region: '',
+        content: '',
+        cover_img: '',
+        state: ''
+      },
+      rules: {
+        // title: [
+        //   // { required: true, message: '请输入文章标题', trigger: 'blur' },
+        //   { min: 1, max: 30, message: '文章标题过长', trigger: 'blur' }
+        // ],
+        // cate_id: [{ required: true, message: '请选择文章类型', trigger: 'blur' }],
+        // content: [{ required: true, message: '请输入文章内容', trigger: 'blur' }]
+      },
+      addlist: [],
+      cover: '',
+      artList: []
     }
+  },
+  methods: {
+    handleClose (done) {
+      this.$confirm('此操作将导致文章信息丢失，是否继续？', '提示', {
+        type: 'warning'
+      })
+        .then(_ => {
+          done()
+        })
+        .catch(_ => {})
+    },
+    list () {
+      this.$axios({
+        method: 'get',
+        url: '/my/cate/list'
+      }).then(res => {
+        // console.log(res.data)
+        this.addlist = res.data.data
+      })
+    },
+    coverChange (e) {
+      // 提取用户选择的文件
+      const file = e.target.files[0]
+      if (file) {
+        // // 1、创建对象
+        // const fr = new FileReader()
+        // // 2、读文件
+        // fr.readAsDataURL(file)
+        // // 3、获取结果
+        // fr.onload = (e) => {
+        // // 4、设置给img的src
+        //   this.cover = e.target.result
+        //   console.log(e)
+        // }
+        this.cover = URL.createObjectURL(file)
+        this.ruleForm.cover_img = file
+      } else {
+        // 清除预览
+        this.cover = ''
+        // 清除用户选择的文件
+        this.ruleForm.cover_img = ''
+      }
+    },
+    fabu (state) {
+      this.ruleForm.state = state
+      // 兜底校验
+      this.$refs.ruleForm.validate(valid => {
+        if (!valid) return
+        // 创建formdata对象
+        const fd = new FormData()
+        fd.append('title', this.ruleForm.name)
+        fd.append('cate_id', this.ruleForm.region)
+        fd.append('content', this.ruleForm.content)
+        fd.append('state', this.ruleForm.state)
+        fd.append('cover_img', this.ruleForm.cover_img)
+        console.log(fd)
+        this.$axios({
+          method: 'post',
+          url: '/my/article/add',
+          data: fd
+        }).then(res => {
+          console.log(res.data)
+          if (res.data.code !== 0) this.$message.success(res.data.message)
+          this.$message.error(res.data.message)
+        })
+      })
+    },
+    getList () {
+      this.$axios({
+        method: 'get',
+        url: '/my/article/list',
+        params: this.q
+      }).then(res => {
+        console.log(res.data)
+        this.artList = res.data.data
+        this.total = res.data.total
+      })
+    },
+    fromatData (data) {
+      return dayjs(data).format('YYYY-MM-DD HH:mm:ss')
+    },
+    handleSizeChange (val) {
+      console.log(`每页 ${val} 条`)
+      this.q.pagesize = val
+      this.getList()
+    },
+    handleCurrentChange (val) {
+      console.log(`当前页: ${val}`)
+      this.q.pagenum = val
+      this.getList()
+    }
+
+  },
+  created () {
+    this.list()
+    this.getList()
   }
 }
 </script>
@@ -61,4 +258,16 @@ export default {
       margin-top: 5px;
     }
   }
+  .el-select{
+    width: 100%;
+  }
+  /deep/.quill-editor .ql-editor{
+      height: 300px;
+  }
+  // 设置图片封面的宽高
+.cover-img {
+  width: 400px;
+  height: 280px;
+  object-fit: cover;
+}
   </style>
