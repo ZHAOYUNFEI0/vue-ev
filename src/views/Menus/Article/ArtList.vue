@@ -8,20 +8,19 @@
         <div class="search-box">
           <el-form :inline="true" :model="q">
             <el-form-item label="文章分类">
-              <el-select v-model="q.cate_id" placeholder="请选择分类" size="small">
-                <el-option label="区域一" value="shanghai"></el-option>
-                <el-option label="区域二" value="beijing"></el-option>
+              <el-select v-model="qq.cate_id" placeholder="请选择分类" size="small">
+                <el-option v-for="item in addlist" :key="item.id" :label="item.cate_name" :value="item.id"></el-option>
               </el-select>
             </el-form-item>
             <el-form-item label="发布状态" style="margin-left: 15px;">
-              <el-select v-model="q.state" placeholder="请选择状态" size="small">
+              <el-select v-model="qq.state" placeholder="请选择状态" size="small">
                 <el-option label="已发布" value="已发布"></el-option>
                 <el-option label="草稿" value="草稿"></el-option>
               </el-select>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" size="small">筛选</el-button>
-              <el-button type="info" size="small">重置</el-button>
+              <el-button @click="shaixuan" type="primary" size="small">筛选</el-button>
+              <el-button @click="reset" type="info" size="small">重置</el-button>
             </el-form-item>
           </el-form>
           <!-- 发表文章的按钮 -->
@@ -35,9 +34,11 @@
             :data="artList"
             style="width: 100%">
             <el-table-column
-              prop="title"
               label="文章标题"
               width="180">
+              <template v-slot="scop">
+               <el-link @click="yulan(scop.row.id)">{{ scop.row.title }}</el-link>
+              </template>
             </el-table-column>
             <el-table-column
               prop="cate_name"
@@ -52,12 +53,14 @@
             </el-table-column>
             <el-table-column
               label="操作">
-              <el-button type="danger" size="mini">删除</el-button>
+              <template v-slot="scop">
+                <el-button @click="del(scop.row.id)" type="danger" size="mini">删除</el-button>
+              </template>
+
             </el-table-column>
           </el-table>
 
         <!-- 分页区域 -->
-        <div class="block">
           <el-pagination
             @size-change="handleSizeChange"
             @current-change="handleCurrentChange"
@@ -67,9 +70,9 @@
             layout="total, sizes, prev, pager, next, jumper"
             :total=total>
           </el-pagination>
-        </div>
       </el-card>
 
+      <!-- 发表文章 -->
       <el-dialog
         fullscreen
         title="发表文章"
@@ -112,6 +115,28 @@
         </el-form>
 
       </el-dialog>
+
+      <!-- 文章预览 -->
+      <el-dialog
+        title="文章预览"
+        :visible.sync="yulanVisible"
+        width="80%">
+          <h1 class="title">{{ yulanData.title }}</h1>
+
+          <div class="info">
+            <span>作者：{{ yulanData.nickname || yulanData.username }}</span>
+            <span>发布时间：{{ fromatData(yulanData.put_data) }}</span>
+            <span>所属分类：{{ yulanData.cate_name }}</span>
+            <span>状态：{{ yulanData.state }}</span>
+          </div>
+
+          <!-- 分割线 -->
+          <el-divider></el-divider>
+
+          <img :src="'http://www.liulongbin.top:3008' + yulanData.cover_img" alt="" />
+
+          <div v-html="yulanData.content"></div>
+      </el-dialog>
     </div>
   </template>
 
@@ -125,6 +150,10 @@ export default {
       q: {
         pagenum: 1,
         pagesize: 2,
+        cate_id: '',
+        state: ''
+      },
+      qq: {
         cate_id: '',
         state: ''
       },
@@ -147,7 +176,9 @@ export default {
       },
       addlist: [],
       cover: '',
-      artList: []
+      artList: [],
+      yulanData: '',
+      yulanVisible: false
     }
   },
   methods: {
@@ -222,7 +253,7 @@ export default {
         url: '/my/article/list',
         params: this.q
       }).then(res => {
-        console.log(res.data)
+        // console.log(res.data)
         this.artList = res.data.data
         this.total = res.data.total
       })
@@ -239,12 +270,71 @@ export default {
       console.log(`当前页: ${val}`)
       this.q.pagenum = val
       this.getList()
+    },
+    shaixuan () {
+      this.q.cate_id = this.qq.cate_id
+      this.q.state = this.qq.state
+      this.q.pagenum = 1
+      this.getList()
+    },
+    reset () {
+      this.q = {
+        pagenum: 1,
+        pagesize: 2,
+        cate_id: '',
+        state: ''
+      }
+      this.qq = {
+        cate_id: '',
+        state: ''
+      }
+      this.getList()
+    },
+    yulan (id) {
+      this.$axios({
+        method: 'get',
+        url: '/my/article/info',
+        params: { id }
+      }).then(res => {
+        // console.log(res.data)
+        this.yulanData = res.data.data
+        this.yulanVisible = true
+      })
+    },
+    del (id) {
+      this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$axios({
+          method: 'delete',
+          url: '/my/article/info',
+          params: { id }
+        }).then(res => {
+          // console.log(res.data)
+          if (this.artList.length === 1 && this.q.pagenum > 1) {
+            this.q.pagenum--
+          }
+          this.getList()
+        })
+        this.$message({
+          type: 'success',
+          message: '删除成功!'
+        })
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        })
+      })
     }
 
   },
   created () {
     this.list()
     this.getList()
+    // console.log(this.addlist)
   }
 }
 </script>
@@ -269,5 +359,19 @@ export default {
   width: 400px;
   height: 280px;
   object-fit: cover;
+}
+.title {
+  font-size: 24px;
+  text-align: center;
+  font-weight: normal;
+  color: #000;
+  margin: 0 0 10px 0;
+}
+
+.info {
+  font-size: 12px;
+  span {
+    margin-right: 20px;
+  }
 }
   </style>
