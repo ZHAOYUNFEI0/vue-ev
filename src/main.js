@@ -5,7 +5,7 @@ import store from './store'
 
 // element-ui 框架引入
 import ElementUI from 'element-ui'
-import 'element-ui/lib/theme-chalk/index.css'
+// import 'element-ui/lib/theme-chalk/index.css'
 
 import './assets/global.less'
 

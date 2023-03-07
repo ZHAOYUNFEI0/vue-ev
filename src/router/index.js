@@ -1,17 +1,17 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 
-import Reg from '@/views/Reg/Reg'
-import Login from '@/views/Login/Login'
-import Main from '@/views/Main/Main'
-import Home from '@/views/Menus/Home/Home'
-import UserInfo from '@/views/Menus/User/UserInfo'
-import UserAvatar from '@/views/Menus/User/UserAvatar'
-import UserPwd from '@/views/Menus/User/UserPwd'
-import ArtCate from '@/views/Menus/Article/ArtCate'
-import ArtList from '@/views/Menus/Article/ArtList'
-
 import store from '@/store'
+
+const Reg = () => import('@/views/Reg/Reg')
+const Login = () => import('@/views/Login/Login')
+const Main = () => import('@/views/Main/Main')
+const Home = () => import('@/views/Menus/Home/Home')
+const UserInfo = () => import('@/views/Menus/User/UserInfo')
+const UserAvatar = () => import('@/views/Menus/User/UserAvatar')
+const UserPwd = () => import('@/views/Menus/User/UserPwd')
+const ArtCate = () => import('@/views/Menus/Article/ArtCate')
+const ArtList = () => import('@/views/Menus/Article/ArtList')
 
 Vue.use(VueRouter)
 
