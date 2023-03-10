@@ -6,15 +6,32 @@
       <!-- 标题的盒子 -->
       <div class="title-box"></div>
       <!-- 登录的表单区域 -->
-      <el-form  :model="loginRorm" :rules="loginRules" ref="loginRorm" class="demo-loginRorm">
+      <el-form
+        :model="loginRorm"
+        :rules="loginRules"
+        ref="loginRorm"
+        class="demo-loginRorm"
+      >
         <el-form-item prop="username">
-          <el-input prefix-icon="el-icon-user" placeholder="请输入用户名" v-model="loginRorm.username"></el-input>
+          <el-input
+            prefix-icon="el-icon-user"
+            placeholder="请输入用户名"
+            v-model="loginRorm.username"
+          ></el-input>
         </el-form-item>
         <el-form-item prop="password">
-          <el-input type="password" prefix-icon="el-icon-lock" placeholder="请输入密码" v-model="loginRorm.password"></el-input>
+          <el-input
+          @keyup.enter.native="loginBtn"
+            type="password"
+            prefix-icon="el-icon-lock"
+            placeholder="请输入密码"
+            v-model="loginRorm.password"
+          ></el-input>
         </el-form-item>
         <el-form-item prop="password">
-          <el-button @click="loginBtn" class="loginBtn" type="primary">登录</el-button>
+          <el-button @click="loginBtn" class="loginBtn" type="primary"
+            >登录</el-button
+          >
           <el-link @click="goReg" type="info">去注册</el-link>
         </el-form-item>
       </el-form>
@@ -38,7 +55,11 @@ export default {
         ],
         password: [
           { required: true, message: '请输入密码', trigger: 'blur' },
-          { rpattern: /^\S{6,15}$/, message: '请输入6-15位的非空字符', trigger: 'blur' }
+          {
+            rpattern: /^\S{6,15}$/,
+            message: '请输入6-15位的非空字符',
+            trigger: 'blur'
+          }
         ]
       },
       loading: false
@@ -66,7 +87,7 @@ export default {
             username: this.loginRorm.username,
             password: this.loginRorm.password
           }
-        }).then(res => {
+        }).then((res) => {
           if (res.data.code === 0) {
             console.log(res.data)
             this.$message({
@@ -89,9 +110,11 @@ export default {
     goReg () {
       this.$router.push('/reg')
     }
+  },
+  created () {
+    console.log('我是axios' + this.$axios)
   }
 }
-
 </script>
 <style lang="less" scoped>
 .login-container {
@@ -116,7 +139,7 @@ export default {
       background: url('../../assets/images/login_title.png') center no-repeat;
     }
 
-    .loginBtn{
+    .loginBtn {
       width: 100%;
     }
   }
